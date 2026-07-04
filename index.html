@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Plano Mestre de Recuperação Capilar</title>
+<meta name="theme-color" content="#24402E">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" href="/icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #E7E4D6;
+    --panel: #FBFAF4;
+    --panel-2: #F2EFE3;
+    --ink: #202B22;
+    --muted: #6E6B5C;
+    --line: #D3CDB9;
+    --green: #3D6B4F;
+    --green-dark: #24402E;
+    --green-pale: #DCE6DD;
+    --rust: #A8592E;
+    --rust-pale: #EFDCCB;
+    --red: #B33A3A;
+    --red-pale: #F3DCDA;
+    --shadow: 0 1px 2px rgba(32,43,34,0.06), 0 4px 14px rgba(32,43,34,0.06);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    background-image: radial-gradient(circle at 1px 1px, rgba(32,43,34,0.05) 1px, transparent 0);
+    background-size: 22px 22px;
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,.serif{font-family:'Fraunces',serif;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  .app{max-width:980px;margin:0 auto;padding:28px 20px 60px;}
+
+  /* LOGIN */
+  .login-wrap{
+    min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px;
+  }
+  .login-card{
+    background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:32px 28px;
+    max-width:380px; width:100%; box-shadow:var(--shadow);
+  }
+  .login-card .eyebrow{font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--rust); margin-bottom:6px;}
+  .login-card h1{font-size:22px; margin:0 0 4px; color:var(--green-dark);}
+  .login-card p.sub{color:var(--muted); font-size:13px; margin:0 0 22px;}
+  .login-msg{font-size:12.5px; margin-top:10px; min-height:18px;}
+  .login-msg.err{color:var(--red);}
+  .login-msg.ok{color:var(--green-dark);}
+  .login-toggle{font-size:12.5px; color:var(--green-dark); text-decoration:underline; cursor:pointer; margin-top:14px; display:inline-block;}
+
+  /* HEADER */
+  .masthead{
+    background:var(--green-dark); color:#F3EFE2; border-radius:14px; padding:26px 28px;
+    box-shadow:var(--shadow); position:relative; overflow:hidden;
+  }
+  .masthead::after{
+    content:""; position:absolute; right:-40px; top:-40px; width:160px;height:160px;border-radius:50%;
+    background:radial-gradient(circle, rgba(168,89,46,0.35), transparent 70%);
+  }
+  .top-row{display:flex; justify-content:space-between; align-items:flex-start; gap:10px;}
+  .masthead .eyebrow{font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:#C9BFA0; margin-bottom:6px;}
+  .masthead h1{font-size:28px; margin:0 0 4px; font-weight:600;}
+  .masthead .sub{color:#C9D6C7; font-size:14px; margin-bottom:18px;}
+  .stat-row{display:flex; gap:10px; flex-wrap:wrap;}
+  .stat-chip{background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.14); border-radius:10px; padding:10px 14px; min-width:110px;}
+  .stat-chip .n{font-family:'IBM Plex Mono',monospace; font-size:20px; font-weight:600;}
+  .stat-chip .l{font-size:10.5px; color:#C9D6C7; text-transform:uppercase; letter-spacing:.06em;}
+  .logout-btn{
+    background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); color:#F3EFE2;
+    font-family:'IBM Plex Mono',monospace; font-size:11px; padding:6px 12px; border-radius:7px; cursor:pointer;
+  }
+
+  /* TABS */
+  .tabs{display:flex; gap:4px; margin-top:20px; overflow-x:auto; padding-bottom:2px;}
+  .tab{
+    font-family:'IBM Plex Mono',monospace; font-size:12px; white-space:nowrap; padding:9px 14px 8px;
+    background:var(--panel-2); border:1px solid var(--line); border-bottom:none; border-radius:8px 8px 0 0;
+    color:var(--muted); cursor:pointer; transform:translateY(3px); transition:transform .12s ease, color .12s ease, background .12s ease;
+  }
+  .tab:hover{color:var(--ink);}
+  .tab.active{background:var(--panel); color:var(--green-dark); font-weight:600; transform:translateY(0); box-shadow:0 -2px 6px rgba(32,43,34,0.05);}
+
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:0 10px 10px 10px; padding:26px; box-shadow:var(--shadow);}
+  .section{display:none;}
+  .section.active{display:block;}
+
+  h2.section-title{font-size:20px; margin:0 0 4px; color:var(--green-dark);}
+  .section-desc{color:var(--muted); font-size:13.5px; margin:0 0 20px;}
+
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+  @media (max-width:640px){.grid2{grid-template-columns:1fr;}}
+
+  label{font-size:12px; color:var(--muted); display:block; margin-bottom:4px; font-weight:600; text-transform:uppercase; letter-spacing:.03em;}
+  input[type=text], input[type=email], input[type=password], input[type=date], input[type=number], input[type=time], textarea, select{
+    width:100%; padding:9px 11px; border:1px solid var(--line); border-radius:7px;
+    background:#fff; font-family:'Inter',sans-serif; font-size:14px; color:var(--ink);
+  }
+  textarea{resize:vertical; min-height:70px;}
+  .field{margin-bottom:14px;}
+
+  button.btn{font-family:'Inter',sans-serif; font-weight:600; font-size:13.5px; background:var(--green); color:#fff; border:none; padding:10px 16px; border-radius:8px; cursor:pointer; transition:background .15s ease; width:100%;}
+  button.btn:hover{background:var(--green-dark);}
+  button.btn.ghost{background:transparent; color:var(--green-dark); border:1px solid var(--green);}
+  button.btn.ghost:hover{background:var(--green-pale);}
+  button.btn.danger{background:transparent; color:var(--red); border:1px solid var(--red);}
+  button.btn.danger:hover{background:var(--red-pale);}
+  button.btn.small{padding:6px 11px; font-size:12px; width:auto;}
+  button.btn.auto{width:auto;}
+
+  .med-row{display:flex; align-items:center; gap:14px; padding:14px; border:1px solid var(--line); border-radius:10px; margin-bottom:10px; background:var(--panel-2);}
+  .med-row.done{background:var(--green-pale); border-color:var(--green);}
+  .med-check{width:26px;height:26px; border-radius:50%; border:2px solid var(--green); display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; background:#fff; font-size:14px; color:transparent;}
+  .med-row.done .med-check{background:var(--green); color:#fff;}
+  .med-name{font-weight:600; font-size:14.5px;}
+  .med-meta{font-size:12px; color:var(--muted); font-family:'IBM Plex Mono',monospace;}
+  .med-row .txt{flex:1;}
+
+  .streak-msg{font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:var(--green-dark); background:var(--green-pale); border:1px dashed var(--green); padding:10px 14px; border-radius:8px; margin-bottom:18px;}
+
+  .cal-header{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;}
+  .cal-header .month-label{font-family:'Fraunces',serif; font-size:19px; font-weight:600; color:var(--green-dark);}
+  .cal-nav button{background:none; border:1px solid var(--line); border-radius:6px; padding:5px 10px; cursor:pointer; font-size:14px; width:auto;}
+  .cal-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:6px;}
+  .cal-dow{text-align:center; font-size:10.5px; text-transform:uppercase; color:var(--muted); font-family:'IBM Plex Mono',monospace; padding-bottom:4px;}
+  .cal-day{min-height:66px; border:1px solid var(--line); border-radius:8px; padding:6px; background:var(--panel-2); font-size:11px; position:relative;}
+  .cal-day.today{border:2px solid var(--rust);}
+  .cal-day.empty{background:transparent; border:none;}
+  .cal-day .d-num{font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--muted);}
+  .cal-icons{margin-top:4px; display:flex; gap:3px; flex-wrap:wrap;}
+  .cal-icons span{font-size:13px;}
+  .legend{display:flex; gap:16px; flex-wrap:wrap; margin-top:16px; font-size:12px; color:var(--muted);}
+
+  .list-item{border:1px solid var(--line); border-radius:9px; padding:12px 14px; margin-bottom:8px; background:var(--panel-2); display:flex; justify-content:space-between; align-items:flex-start; gap:10px;}
+  .list-item .content{font-size:13.5px;}
+  .list-item .content .date{font-family:'IBM Plex Mono',monospace; font-weight:600; color:var(--green-dark); font-size:12.5px;}
+  .list-item .content .notes{color:var(--muted); margin-top:3px;}
+
+  .checklist-mini label{font-weight:400; text-transform:none; letter-spacing:0; font-size:13px; color:var(--ink); display:flex; align-items:center; gap:7px; margin-bottom:6px; cursor:pointer;}
+  .checklist-mini input{width:auto;}
+
+  .science-item{display:flex; justify-content:space-between; align-items:center; padding:11px 14px; border-bottom:1px solid var(--line); font-size:13.5px;}
+  .science-item:last-child{border-bottom:none;}
+  .stars{color:var(--rust); font-family:'IBM Plex Mono',monospace; letter-spacing:1px;}
+
+  .guide-block{margin-bottom:18px;}
+  .guide-block h3{font-size:15px; color:var(--green-dark); margin:0 0 6px;}
+  .guide-block p{font-size:13.5px; color:#3a3f38; line-height:1.55;}
+
+  .fin-total{display:flex; justify-content:space-between; background:var(--green-pale); border:1px solid var(--green); border-radius:9px; padding:12px 16px; margin-bottom:14px; font-family:'IBM Plex Mono',monospace; font-weight:600;}
+  .empty-state{color:var(--muted); font-size:13px; font-style:italic; padding:12px 0;}
+
+  .save-toast{
+    position:fixed; bottom:18px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--green-dark); color:#F3EFE2; font-family:'IBM Plex Mono',monospace; font-size:12px;
+    padding:8px 16px; border-radius:20px; opacity:0; transition:all .25s ease; pointer-events:none; z-index:50;
+  }
+  .save-toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+  .save-toast.err{background:var(--red);}
+
+  #appRoot{display:none;}
+  ::selection{background:var(--rust-pale);}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="loginWrap">
+  <div class="login-card">
+    <div class="eyebrow">Acesso privado</div>
+    <h1>Plano Mestre Capilar</h1>
+    <p class="sub">Seus dados ficam só na sua conta, protegidos por login.</p>
+    <div class="field"><label>E-mail</label><input type="email" id="loginEmail" placeholder="voce@email.com"></div>
+    <div class="field"><label>Senha</label><input type="password" id="loginPass" placeholder="••••••••"></div>
+    <button class="btn" id="loginBtn" onclick="handleLogin()">Entrar</button>
+    <div class="login-msg" id="loginMsg"></div>
+    <span class="login-toggle" id="toggleMode" onclick="toggleAuthMode()">Ainda não tem conta? Criar conta</span>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app" id="appRoot">
+
+  <div class="masthead">
+    <div class="top-row">
+      <div>
+        <div class="eyebrow">Plano Mestre de Recuperação Capilar</div>
+        <h1 id="patientTitle">Caderno de Tratamento</h1>
+        <div class="sub" id="patientSub">Carregando dados...</div>
+      </div>
+      <button class="logout-btn" onclick="handleLogout()">Sair</button>
+    </div>
+    <div class="stat-row">
+      <div class="stat-chip"><div class="n" id="statDia">—</div><div class="l">dia do tratamento</div></div>
+      <div class="stat-chip"><div class="n" id="statAdesao">—</div><div class="l">adesão (30d)</div></div>
+      <div class="stat-chip"><div class="n" id="statProxMicro">—</div><div class="l">próx. microagulhamento</div></div>
+    </div>
+  </div>
+
+  <div class="tabs" id="tabsRow"></div>
+  <div class="card" id="cardWrap">
+
+    <!-- HOJE -->
+    <section class="section" data-section="hoje">
+      <h2 class="section-title">Controle diário</h2>
+      <p class="section-desc">Marque conforme for tomando / aplicando ao longo do dia.</p>
+      <div class="streak-msg" id="streakMsg"></div>
+      <div id="dailyList"></div>
+      <div style="margin-top:16px;">
+        <label>Anotação rápida do dia (opcional)</label>
+        <textarea id="dailyNote" placeholder="Ex: senti leve coceira no couro cabeludo hoje..."></textarea>
+        <div style="margin-top:8px;"><button class="btn small auto" onclick="saveDailyNote()">Salvar anotação</button></div>
+      </div>
+    </section>
+
+    <!-- TRATAMENTO -->
+    <section class="section" data-section="tratamento">
+      <h2 class="section-title">Meu tratamento</h2>
+      <p class="section-desc">Configure seus dados e seus medicamentos.</p>
+      <div class="grid2">
+        <div class="field"><label>Seu nome</label><input type="text" id="cfgNome"></div>
+        <div class="field"><label>Data de início do tratamento</label><input type="date" id="cfgInicio"></div>
+      </div>
+      <div class="field"><label>Meta do tratamento</label><input type="text" id="cfgMeta" placeholder="Ex: recuperar densidade nas entradas até dez/2026"></div>
+      <button class="btn ghost auto small" onclick="saveUserConfig()">Salvar dados</button>
+
+      <h3 style="margin-top:26px; font-size:15px; color:var(--green-dark);">Medicamentos</h3>
+      <div id="medsConfigList"></div>
+      <button class="btn ghost auto" onclick="addMed()">+ Adicionar medicamento</button>
+    </section>
+
+    <!-- MICROAGULHAMENTO -->
+    <section class="section" data-section="micro">
+      <h2 class="section-title">Cronograma do microagulhamento</h2>
+      <p class="section-desc">Sessões a cada <span id="microIntervalLabel">15</span> dias. Registre cada sessão realizada.</p>
+      <div class="grid2">
+        <div class="field"><label>Intervalo entre sessões (dias)</label><input type="number" id="microInterval" min="1"></div>
+        <div class="field"><label>Data da última sessão registrada</label><input type="date" id="microLastDate" readonly></div>
+      </div>
+      <button class="btn ghost auto small" onclick="saveMicroConfig()">Salvar configuração</button>
+
+      <h3 style="margin-top:26px; font-size:15px; color:var(--green-dark);">Registrar nova sessão</h3>
+      <div class="field"><label>Data da sessão</label><input type="date" id="microNewDate"></div>
+      <div class="grid2">
+        <div>
+          <label>Checklist — antes</label>
+          <div class="checklist-mini">
+            <label><input type="checkbox" id="mb1"> Couro cabeludo limpo (sem produtos)</label>
+            <label><input type="checkbox" id="mb2"> Dermastamp higienizado (álcool 70%)</label>
+            <label><input type="checkbox" id="mb3"> Anestésico tópico aplicado (se usar)</label>
+          </div>
+        </div>
+        <div>
+          <label>Checklist — depois</label>
+          <div class="checklist-mini">
+            <label><input type="checkbox" id="ma1"> Fórmula/ativo pós-procedimento aplicado</label>
+            <label><input type="checkbox" id="ma2"> Dermastamp higienizado e guardado</label>
+            <label><input type="checkbox" id="ma3"> Evitar sol/suor nas próximas 24h — combinado</label>
+          </div>
+        </div>
+      </div>
+      <div class="field"><label>Observações da sessão</label><textarea id="microNotes" placeholder="Profundidade usada, sensibilidade, vermelhidão..."></textarea></div>
+      <button class="btn auto" onclick="addMicroSession()">Registrar sessão</button>
+
+      <h3 style="margin-top:26px; font-size:15px; color:var(--green-dark);">Histórico de sessões</h3>
+      <div id="microHistory"></div>
+    </section>
+
+    <!-- FORMULA -->
+    <section class="section" data-section="formula">
+      <h2 class="section-title">Fórmula manipulada</h2>
+      <p class="section-desc">Controle de composição e ciclos de uso.</p>
+      <div class="field"><label>Composição da fórmula</label><textarea id="formulaComposicao" placeholder="Ex: Minoxidil 5% + Finasterida 0,1% + Tretinoína 0,01%..."></textarea></div>
+      <div class="grid2">
+        <div class="field"><label>Início do uso (horas após o microagulhamento)</label><input type="number" id="formulaStartHours"></div>
+        <div class="field"><label>Duração do uso (dias)</label><input type="number" id="formulaDuration"></div>
+      </div>
+      <button class="btn ghost auto small" onclick="saveFormulaConfig()">Salvar configuração</button>
+
+      <h3 style="margin-top:24px; font-size:15px; color:var(--green-dark);">Ativar novo ciclo de uso</h3>
+      <p class="section-desc" style="margin-bottom:10px;">Normalmente ativado logo após uma sessão de microagulhamento.</p>
+      <div class="field"><label>Data de referência (ex: data do microagulhamento)</label><input type="date" id="formulaRefDate"></div>
+      <button class="btn auto" onclick="addFormulaActivation()">Ativar ciclo</button>
+
+      <h3 style="margin-top:24px; font-size:15px; color:var(--green-dark);">Ciclos registrados</h3>
+      <div id="formulaHistory"></div>
+    </section>
+
+    <!-- CALENDARIO -->
+    <section class="section" data-section="calendario">
+      <h2 class="section-title">Calendário</h2>
+      <div class="cal-header">
+        <div class="cal-nav"><button onclick="changeMonth(-1)">‹</button></div>
+        <div class="month-label" id="calMonthLabel"></div>
+        <div class="cal-nav"><button onclick="changeMonth(1)">›</button></div>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+      <div class="legend">
+        <div><span>💉</span>Microagulhamento</div>
+        <div><span>🧴</span>Dias de fórmula</div>
+        <div><span>💊</span>Todos os comprimidos tomados</div>
+        <div><span>⚠️</span>Dia incompleto</div>
+      </div>
+    </section>
+
+    <!-- EVOLUCAO -->
+    <section class="section" data-section="evolucao">
+      <h2 class="section-title">Evolução mensal</h2>
+      <p class="section-desc">Uma página por mês. Fotos ficam salvas no seu dispositivo — aqui você registra as observações e métricas.</p>
+      <div class="field"><label>Mês de referência</label><input type="text" id="evoMes" placeholder="Ex: Julho/2026"></div>
+      <div class="grid2">
+        <div class="field"><label>Nível de queda (1-5)</label><input type="number" id="evoQueda" min="1" max="5"></div>
+        <div class="field"><label>Espessura percebida (1-5)</label><input type="number" id="evoEspessura" min="1" max="5"></div>
+      </div>
+      <div class="field"><label>Observações / comparativo antes x depois</label><textarea id="evoObs" placeholder="Notas sobre densidade, brilho, quedas no travesseiro/chuveiro, comparação com foto do mês anterior..."></textarea></div>
+      <button class="btn auto" onclick="addEvolucao()">Salvar registro do mês</button>
+
+      <h3 style="margin-top:24px; font-size:15px; color:var(--green-dark);">Histórico</h3>
+      <div id="evoHistory"></div>
+    </section>
+
+    <!-- GUIA RAPIDO -->
+    <section class="section" data-section="guia">
+      <h2 class="section-title">Guia rápido</h2>
+      <div class="guide-block">
+        <h3>🧼 Como limpar o Dermastamp</h3>
+        <p>Antes e depois de cada uso: mergulhe as agulhas em álcool isopropílico 70% por 10-15 minutos. Nunca reutilize em outra pessoa. Enxágue com água destilada se necessário e deixe secar ao ar em superfície limpa antes de guardar.</p>
+      </div>
+      <div class="guide-block">
+        <h3>🔄 Quando trocar o cabeçote/agulhas</h3>
+        <p>Troque a cada 8-10 sessões, ou antes se notar agulhas tortas, enferrujadas ou perda de sensibilidade no rolar. Nunca use agulhas visivelmente danificadas.</p>
+      </div>
+      <div class="guide-block">
+        <h3>✅ Antes do procedimento</h3>
+        <p>Couro cabeludo limpo e seco, sem produtos. Evite álcool e anti-inflamatórios nas 24h anteriores, se possível. Se for usar anestésico tópico, respeite o tempo de ação antes de começar.</p>
+      </div>
+      <div class="guide-block">
+        <h3>🩹 Depois do procedimento</h3>
+        <p>Evite sol direto, piscina, sauna e exercício intenso por 24-48h. Não lave o cabelo nas primeiras horas (siga orientação do seu profissional). Aplique a fórmula manipulada apenas no horário indicado.</p>
+      </div>
+    </section>
+
+    <!-- FINANCEIRO -->
+    <section class="section" data-section="financeiro">
+      <h2 class="section-title">Controle financeiro</h2>
+      <div class="fin-total"><span>Total investido no tratamento</span><span id="finTotal">R$ 0,00</span></div>
+      <div class="grid2">
+        <div class="field"><label>Data</label><input type="date" id="finData"></div>
+        <div class="field"><label>Categoria</label>
+          <select id="finCategoria">
+            <option>Medicamentos</option>
+            <option>Fórmula manipulada</option>
+            <option>Consulta</option>
+            <option>Procedimento</option>
+            <option>Outro</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Descrição</label><input type="text" id="finDesc" placeholder="Ex: Minoxidil 5mg — 60 caps"></div>
+        <div class="field"><label>Valor (R$)</label><input type="number" step="0.01" id="finValor"></div>
+      </div>
+      <button class="btn auto" onclick="addFinanceiro()">Adicionar lançamento</button>
+      <h3 style="margin-top:22px; font-size:15px; color:var(--green-dark);">Lançamentos</h3>
+      <div id="finHistory"></div>
+    </section>
+
+    <!-- CIENCIA -->
+    <section class="section" data-section="ciencia">
+      <h2 class="section-title">Guia científico</h2>
+      <p class="section-desc">Resumo por nível de evidência científica atual — não substitui orientação médica.</p>
+      <div>
+        <div class="science-item"><span>Dutasterida (oral)</span><span class="stars">★★★★★</span></div>
+        <div class="science-item"><span>Minoxidil oral</span><span class="stars">★★★★★</span></div>
+        <div class="science-item"><span>Microagulhamento</span><span class="stars">★★★★</span></div>
+        <div class="science-item"><span>GHK-Cu</span><span class="stars">★★★</span></div>
+        <div class="science-item"><span>VEGF (fatores de crescimento)</span><span class="stars">★★★</span></div>
+        <div class="science-item"><span>PRP</span><span class="stars">★★</span></div>
+        <div class="science-item"><span>Laser de baixa intensidade</span><span class="stars">★★</span></div>
+        <div class="science-item"><span>Biotina (só se houver deficiência)</span><span class="stars">★</span></div>
+        <div class="science-item"><span>Shampoos antiqueda</span><span class="stars">★</span></div>
+      </div>
+      <p style="font-size:12px; color:var(--muted); margin-top:16px;">Sempre acompanhe o tratamento com um dermatologista — este resumo é educativo, não prescritivo.</p>
+    </section>
+
+  </div>
+</div>
+
+<div class="save-toast" id="saveToast">Salvo</div>
+
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+// ============================================================
+// CONFIGURAÇÃO — troque pelos dados do SEU projeto Supabase
+// (Project Settings > API no painel do Supabase)
+// ============================================================
+const SUPABASE_URL = 'https://dnacnyiuivhqcuryoeeg.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_ILVB9uP0gcGkB-3b_UofsA_T9KfYKv3';
+
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+window.sb = sb;
+
+const TABS = [
+  {id:'hoje', label:'Hoje'},
+  {id:'tratamento', label:'Tratamento'},
+  {id:'micro', label:'Microagulhamento'},
+  {id:'formula', label:'Fórmula'},
+  {id:'calendario', label:'Calendário'},
+  {id:'evolucao', label:'Evolução'},
+  {id:'guia', label:'Guia rápido'},
+  {id:'financeiro', label:'Financeiro'},
+  {id:'ciencia', label:'Ciência'},
+];
+
+let authMode = 'signin'; // ou 'signup'
+let uid = null;
+
+let state = {
+  config: { nome:'', data_inicio: todayStr(), meta:'' },
+  meds: [],
+  microConfig: { intervalo_dias: 15, last_date: null },
+  microSessions: [],
+  formulaConfig: { composicao:'', start_hours: 24, duration_days: 4 },
+  formulaActivations: [],
+  dailyLog: {}, // dateStr -> {id, meds_status, formula_taken, nota}
+  evolucao: [],
+  financeiro: [],
+  calMonth: new Date().getMonth(),
+  calYear: new Date().getFullYear(),
+};
+
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+function addDays(dateStr, days){ const d = new Date(dateStr+'T00:00:00'); d.setDate(d.getDate()+days); return d.toISOString().slice(0,10); }
+function fmtDate(dateStr){ const [y,m,d] = dateStr.split('-'); return `${d}/${m}/${y}`; }
+
+function toast(msg, isErr){
+  const t = document.getElementById('saveToast');
+  t.textContent = msg || 'Salvo';
+  t.classList.toggle('err', !!isErr);
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 1600);
+}
+
+/* ================= AUTH ================= */
+window.toggleAuthMode = function(){
+  authMode = authMode === 'signin' ? 'signup' : 'signin';
+  document.getElementById('loginBtn').textContent = authMode === 'signin' ? 'Entrar' : 'Criar conta';
+  document.getElementById('toggleMode').textContent = authMode === 'signin'
+    ? 'Ainda não tem conta? Criar conta'
+    : 'Já tem conta? Entrar';
+  document.getElementById('loginMsg').textContent = '';
+};
+
+window.handleLogin = async function(){
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  const msg = document.getElementById('loginMsg');
+  msg.className = 'login-msg';
+  if(!email || !pass){ msg.textContent = 'Preencha e-mail e senha.'; msg.classList.add('err'); return; }
+
+  msg.textContent = 'Aguarde...';
+  try{
+    if(authMode === 'signin'){
+      const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+      if(error) throw error;
+      onAuthed(data.user);
+    } else {
+      const { data, error } = await sb.auth.signUp({ email, password: pass });
+      if(error) throw error;
+      if(data.user && !data.session){
+        msg.textContent = 'Conta criada! Verifique seu e-mail para confirmar (ou desative a confirmação no Supabase).';
+        msg.classList.add('ok');
+      } else if(data.user){
+        onAuthed(data.user);
+      }
+    }
+  }catch(e){
+    msg.textContent = traduzErro(e.message);
+    msg.classList.add('err');
+  }
+};
+
+function traduzErro(msg){
+  if(msg.includes('Invalid login credentials')) return 'E-mail ou senha incorretos.';
+  if(msg.includes('User already registered')) return 'Esse e-mail já tem conta — tente entrar.';
+  if(msg.includes('Password should be')) return 'Senha muito curta (mínimo 6 caracteres).';
+  return msg;
+}
+
+window.handleLogout = async function(){
+  await sb.auth.signOut();
+  uid = null;
+  document.getElementById('appRoot').style.display = 'none';
+  document.getElementById('loginWrap').style.display = 'flex';
+};
+
+async function onAuthed(user){
+  uid = user.id;
+  document.getElementById('loginWrap').style.display = 'none';
+  document.getElementById('appRoot').style.display = 'block';
+  buildTabs();
+  await loadAll();
+}
+
+/* checa se já existe sessão ativa ao abrir o app */
+sb.auth.getSession().then(({data}) => {
+  if(data.session && data.session.user){
+    onAuthed(data.session.user);
+  }
+});
+
+/* ================= DATA LAYER ================= */
+async function loadAll(){
+  const [uc, meds, mc, ms, fc, fa, dl, ev, fin] = await Promise.all([
+    sb.from('user_config').select('*').eq('user_id', uid).maybeSingle(),
+    sb.from('meds').select('*').eq('user_id', uid).order('created_at'),
+    sb.from('micro_config').select('*').eq('user_id', uid).maybeSingle(),
+    sb.from('micro_sessions').select('*').eq('user_id', uid).order('date'),
+    sb.from('formula_config').select('*').eq('user_id', uid).maybeSingle(),
+    sb.from('formula_activations').select('*').eq('user_id', uid).order('ref_date'),
+    sb.from('daily_log').select('*').eq('user_id', uid),
+    sb.from('evolucao').select('*').eq('user_id', uid).order('created_at'),
+    sb.from('financeiro').select('*').eq('user_id', uid).order('data'),
+  ]);
+
+  if(uc.data){ state.config = uc.data; }
+  else { await sb.from('user_config').insert({ user_id: uid, nome:'', data_inicio: todayStr(), meta:'' }); state.config = { nome:'', data_inicio: todayStr(), meta:'' }; }
+
+  state.meds = meds.data || [];
+
+  if(mc.data){ state.microConfig = mc.data; }
+  else { await sb.from('micro_config').insert({ user_id: uid, intervalo_dias:15, last_date:null }); state.microConfig = { intervalo_dias:15, last_date:null }; }
+
+  state.microSessions = ms.data || [];
+
+  if(fc.data){ state.formulaConfig = fc.data; }
+  else { await sb.from('formula_config').insert({ user_id: uid, composicao:'', start_hours:24, duration_days:4 }); state.formulaConfig = { composicao:'', start_hours:24, duration_days:4 }; }
+
+  state.formulaActivations = fa.data || [];
+
+  state.dailyLog = {};
+  (dl.data || []).forEach(row => { state.dailyLog[row.date] = row; });
+
+  state.evolucao = ev.data || [];
+  state.financeiro = fin.data || [];
+
+  renderAll();
+}
+
+/* ---------- TABS ---------- */
+function buildTabs(){
+  const row = document.getElementById('tabsRow');
+  row.innerHTML = '';
+  TABS.forEach(t=>{
+    const el = document.createElement('div');
+    el.className = 'tab';
+    el.textContent = t.label;
+    el.onclick = ()=>switchTab(t.id);
+    el.dataset.tab = t.id;
+    row.appendChild(el);
+  });
+  switchTab('hoje');
+}
+window.switchTab = function(id){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===id));
+  document.querySelectorAll('.section').forEach(s=>s.classList.toggle('active', s.dataset.section===id));
+  if(id==='calendario') renderCalendar();
+};
+
+/* ---------- HEADER ---------- */
+function renderHeader(){
+  document.getElementById('patientTitle').textContent = `Caderno de Tratamento — ${state.config.nome || 'você'}`;
+  document.getElementById('patientSub').textContent = state.config.meta ? `Meta: ${state.config.meta}` : 'Acompanhamento completo da jornada capilar.';
+
+  const start = state.config.data_inicio || todayStr();
+  const diffDays = Math.floor((new Date(todayStr()) - new Date(start))/86400000) + 1;
+  document.getElementById('statDia').textContent = diffDays > 0 ? diffDays : 1;
+
+  let taken=0, possible=0;
+  for(let i=0;i<30;i++){
+    const d = addDays(todayStr(), -i);
+    if(d < start) continue;
+    const log = state.dailyLog[d];
+    state.meds.forEach(m=>{ possible++; if(log && log.meds_status && log.meds_status[m.id]) taken++; });
+  }
+  document.getElementById('statAdesao').textContent = possible>0 ? Math.round(100*taken/possible)+'%' : '—';
+
+  const next = nextMicroDate();
+  document.getElementById('statProxMicro').textContent = next ? fmtDate(next) : '—';
+}
+
+function nextMicroDate(){
+  const interval = state.microConfig.intervalo_dias || 15;
+  if(state.microSessions.length===0) return state.microConfig.last_date ? addDays(state.microConfig.last_date, interval) : null;
+  const sorted = [...state.microSessions].sort((a,b)=>a.date.localeCompare(b.date));
+  const last = sorted[sorted.length-1].date;
+  return addDays(last, interval);
+}
+
+/* ---------- HOJE ---------- */
+function renderDaily(){
+  const list = document.getElementById('dailyList');
+  list.innerHTML = '';
+  const today = todayStr();
+  const log = state.dailyLog[today] || { meds_status:{}, formula_taken:false, nota:'' };
+  const activeFormula = isFormulaDay(today);
+
+  state.meds.forEach(m=>{
+    const done = !!(log.meds_status && log.meds_status[m.id]);
+    const row = document.createElement('div');
+    row.className = 'med-row' + (done?' done':'');
+    row.innerHTML = `<div class="med-check">✓</div><div class="txt"><div class="med-name">${m.nome}</div><div class="med-meta">${m.dose} · ${m.horario}</div></div>`;
+    row.querySelector('.med-check').onclick = ()=>toggleDaily(m.id);
+    list.appendChild(row);
+  });
+
+  if(activeFormula){
+    const done = !!log.formula_taken;
+    const row = document.createElement('div');
+    row.className = 'med-row' + (done?' done':'');
+    row.innerHTML = `<div class="med-check">✓</div><div class="txt"><div class="med-name">🧴 Fórmula manipulada</div><div class="med-meta">Dia de uso do ciclo ativo</div></div>`;
+    row.querySelector('.med-check').onclick = ()=>toggleDaily('formula');
+    list.appendChild(row);
+  }
+
+  document.getElementById('dailyNote').value = log.nota || '';
+
+  let streak = 0;
+  for(let i=0;i<365;i++){
+    const d = addDays(today, -i);
+    const l = state.dailyLog[d];
+    const allDone = l && l.meds_status && state.meds.every(m=>l.meds_status[m.id]);
+    if(allDone) streak++; else break;
+  }
+  document.getElementById('streakMsg').textContent = streak>0
+    ? `🔥 ${streak} dia(s) seguido(s) com o tratamento em dia.`
+    : `Marque os itens de hoje para começar (ou manter) sua sequência.`;
+}
+
+async function toggleDaily(medId){
+  const today = todayStr();
+  const current = state.dailyLog[today] || { user_id: uid, date: today, meds_status:{}, formula_taken:false, nota:'' };
+  if(medId === 'formula'){
+    current.formula_taken = !current.formula_taken;
+  } else {
+    current.meds_status = { ...current.meds_status, [medId]: !current.meds_status[medId] };
+  }
+  state.dailyLog[today] = current;
+  renderDaily(); renderHeader();
+  const { error } = await sb.from('daily_log').upsert({
+    user_id: uid, date: today, meds_status: current.meds_status, formula_taken: current.formula_taken, nota: current.nota
+  }, { onConflict: 'user_id,date' });
+  if(error) toast('Erro ao salvar', true); else toast();
+}
+
+window.saveDailyNote = async function(){
+  const today = todayStr();
+  const current = state.dailyLog[today] || { user_id: uid, date: today, meds_status:{}, formula_taken:false, nota:'' };
+  current.nota = document.getElementById('dailyNote').value;
+  state.dailyLog[today] = current;
+  const { error } = await sb.from('daily_log').upsert({
+    user_id: uid, date: today, meds_status: current.meds_status, formula_taken: current.formula_taken, nota: current.nota
+  }, { onConflict: 'user_id,date' });
+  if(error) toast('Erro ao salvar', true); else toast();
+};
+
+function isFormulaDay(dateStr){
+  return state.formulaActivations.some(act=>{
+    const start = addDays(act.ref_date, Math.ceil((state.formulaConfig.start_hours||24)/24));
+    const end = addDays(start, (state.formulaConfig.duration_days||4) - 1);
+    return dateStr >= start && dateStr <= end;
+  });
+}
+
+/* ---------- TRATAMENTO ---------- */
+function renderConfigFields(){
+  document.getElementById('cfgNome').value = state.config.nome || '';
+  document.getElementById('cfgInicio').value = state.config.data_inicio || todayStr();
+  document.getElementById('cfgMeta').value = state.config.meta || '';
+}
+window.saveUserConfig = async function(){
+  state.config.nome = document.getElementById('cfgNome').value;
+  state.config.data_inicio = document.getElementById('cfgInicio').value;
+  state.config.meta = document.getElementById('cfgMeta').value;
+  const { error } = await sb.from('user_config').upsert({ user_id: uid, ...state.config }, { onConflict:'user_id' });
+  if(error) toast('Erro ao salvar', true); else toast();
+  renderHeader();
+};
+
+function renderMedsConfig(){
+  const wrap = document.getElementById('medsConfigList');
+  wrap.innerHTML = '';
+  state.meds.forEach((m)=>{
+    const row = document.createElement('div');
+    row.className = 'grid2';
+    row.style.marginBottom = '10px';
+    row.style.alignItems = 'end';
+    row.innerHTML = `
+      <div class="field"><label>Nome</label><input type="text" value="${m.nome}" data-id="${m.id}" data-f="nome"></div>
+      <div class="field"><label>Dose</label><input type="text" value="${m.dose||''}" data-id="${m.id}" data-f="dose"></div>
+      <div class="field"><label>Horário</label><input type="time" value="${m.horario||'08:00'}" data-id="${m.id}" data-f="horario"></div>
+      <div class="field"><button class="btn danger small auto" data-id="${m.id}" data-action="del">Remover</button></div>
+    `;
+    wrap.appendChild(row);
+  });
+  wrap.querySelectorAll('input').forEach(inp=>{
+    inp.onchange = async ()=>{
+      const id = inp.dataset.id, f = inp.dataset.f;
+      const m = state.meds.find(x=>x.id===id);
+      m[f] = inp.value;
+      const { error } = await sb.from('meds').update({ [f]: inp.value }).eq('id', id);
+      if(error) toast('Erro ao salvar', true); else toast();
+      renderDaily(); renderHeader();
+    };
+  });
+  wrap.querySelectorAll('[data-action=del]').forEach(btn=>{
+    btn.onclick = async ()=>{
+      const id = btn.dataset.id;
+      state.meds = state.meds.filter(x=>x.id!==id);
+      await sb.from('meds').delete().eq('id', id);
+      renderMedsConfig(); renderDaily(); renderHeader();
+    };
+  });
+}
+window.addMed = async function(){
+  const { data, error } = await sb.from('meds').insert({ user_id: uid, nome:'Novo medicamento', dose:'', horario:'08:00' }).select().single();
+  if(error){ toast('Erro ao adicionar', true); return; }
+  state.meds.push(data);
+  renderMedsConfig(); renderDaily();
+};
+
+/* ---------- MICROAGULHAMENTO ---------- */
+function renderMicro(){
+  document.getElementById('microInterval').value = state.microConfig.intervalo_dias || 15;
+  document.getElementById('microLastDate').value = state.microConfig.last_date || '';
+  document.getElementById('microIntervalLabel').textContent = state.microConfig.intervalo_dias || 15;
+  document.getElementById('microNewDate').value = todayStr();
+
+  const hist = document.getElementById('microHistory');
+  hist.innerHTML = '';
+  if(state.microSessions.length===0){ hist.innerHTML = '<div class="empty-state">Nenhuma sessão registrada ainda.</div>'; }
+  [...state.microSessions].sort((a,b)=>b.date.localeCompare(a.date)).forEach(s=>{
+    const el = document.createElement('div');
+    el.className = 'list-item';
+    el.innerHTML = `<div class="content"><div class="date">${fmtDate(s.date)}</div><div class="notes">${s.notes || 'Sem observações.'}</div></div>`;
+    hist.appendChild(el);
+  });
+}
+window.saveMicroConfig = async function(){
+  state.microConfig.intervalo_dias = +document.getElementById('microInterval').value || 15;
+  const { error } = await sb.from('micro_config').upsert({ user_id: uid, ...state.microConfig }, { onConflict:'user_id' });
+  if(error) toast('Erro ao salvar', true); else toast();
+  renderMicro(); renderHeader();
+};
+window.addMicroSession = async function(){
+  const date = document.getElementById('microNewDate').value;
+  if(!date) return;
+  const payload = {
+    user_id: uid, date,
+    checklist_antes: [document.getElementById('mb1').checked, document.getElementById('mb2').checked, document.getElementById('mb3').checked],
+    checklist_depois: [document.getElementById('ma1').checked, document.getElementById('ma2').checked, document.getElementById('ma3').checked],
+    notes: document.getElementById('microNotes').value,
+  };
+  const { data, error } = await sb.from('micro_sessions').insert(payload).select().single();
+  if(error){ toast('Erro ao registrar', true); return; }
+  state.microSessions.push(data);
+  state.microConfig.last_date = date;
+  await sb.from('micro_config').upsert({ user_id: uid, ...state.microConfig }, { onConflict:'user_id' });
+  document.getElementById('microNotes').value = '';
+  renderMicro(); renderHeader();
+};
+
+/* ---------- FORMULA ---------- */
+function renderFormula(){
+  document.getElementById('formulaComposicao').value = state.formulaConfig.composicao || '';
+  document.getElementById('formulaStartHours').value = state.formulaConfig.start_hours ?? 24;
+  document.getElementById('formulaDuration').value = state.formulaConfig.duration_days ?? 4;
+  document.getElementById('formulaRefDate').value = todayStr();
+
+  const hist = document.getElementById('formulaHistory');
+  hist.innerHTML = '';
+  if(state.formulaActivations.length===0){ hist.innerHTML = '<div class="empty-state">Nenhum ciclo ativado ainda.</div>'; }
+  [...state.formulaActivations].sort((a,b)=>b.ref_date.localeCompare(a.ref_date)).forEach(act=>{
+    const start = addDays(act.ref_date, Math.ceil((state.formulaConfig.start_hours||24)/24));
+    const end = addDays(start, (state.formulaConfig.duration_days||4)-1);
+    const el = document.createElement('div');
+    el.className = 'list-item';
+    el.innerHTML = `<div class="content"><div class="date">Ref: ${fmtDate(act.ref_date)}</div><div class="notes">Uso de ${fmtDate(start)} até ${fmtDate(end)}</div></div>`;
+    hist.appendChild(el);
+  });
+}
+window.saveFormulaConfig = async function(){
+  state.formulaConfig.composicao = document.getElementById('formulaComposicao').value;
+  state.formulaConfig.start_hours = +document.getElementById('formulaStartHours').value || 24;
+  state.formulaConfig.duration_days = +document.getElementById('formulaDuration').value || 4;
+  const { error } = await sb.from('formula_config').upsert({ user_id: uid, ...state.formulaConfig }, { onConflict:'user_id' });
+  if(error) toast('Erro ao salvar', true); else toast();
+  renderFormula();
+};
+window.addFormulaActivation = async function(){
+  const ref_date = document.getElementById('formulaRefDate').value;
+  if(!ref_date) return;
+  const { data, error } = await sb.from('formula_activations').insert({ user_id: uid, ref_date }).select().single();
+  if(error){ toast('Erro ao ativar', true); return; }
+  state.formulaActivations.push(data);
+  renderFormula(); renderDaily(); renderHeader();
+};
+
+/* ---------- CALENDARIO ---------- */
+window.changeMonth = function(delta){
+  state.calMonth += delta;
+  if(state.calMonth<0){state.calMonth=11; state.calYear--;}
+  if(state.calMonth>11){state.calMonth=0; state.calYear++;}
+  renderCalendar();
+};
+function renderCalendar(){
+  const monthNames = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  document.getElementById('calMonthLabel').textContent = `${monthNames[state.calMonth]} ${state.calYear}`;
+  const grid = document.getElementById('calGrid');
+  grid.innerHTML = '';
+  ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].forEach(d=>{
+    const el = document.createElement('div'); el.className='cal-dow'; el.textContent=d; grid.appendChild(el);
+  });
+  const firstDay = new Date(state.calYear, state.calMonth, 1).getDay();
+  const daysInMonth = new Date(state.calYear, state.calMonth+1, 0).getDate();
+  const today = todayStr();
+
+  for(let i=0;i<firstDay;i++){ const el = document.createElement('div'); el.className='cal-day empty'; grid.appendChild(el); }
+  for(let d=1; d<=daysInMonth; d++){
+    const dateStr = `${state.calYear}-${String(state.calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const el = document.createElement('div');
+    el.className = 'cal-day' + (dateStr===today ? ' today':'');
+    const icons = [];
+    const isMicro = state.microSessions.some(s=>s.date===dateStr);
+    const isNextMicro = nextMicroDate()===dateStr && !isMicro;
+    if(isMicro || isNextMicro) icons.push('💉');
+    if(isFormulaDay(dateStr)) icons.push('🧴');
+
+    const log = state.dailyLog[dateStr];
+    if(dateStr <= today && state.meds.length>0){
+      const allDone = log && log.meds_status && state.meds.every(m=>log.meds_status[m.id]);
+      if(allDone) icons.push('💊');
+      else if(dateStr < today) icons.push('⚠️');
+    }
+    el.innerHTML = `<div class="d-num">${d}</div><div class="cal-icons">${icons.map(i=>`<span>${i}</span>`).join('')}</div>`;
+    grid.appendChild(el);
+  }
+}
+
+/* ---------- EVOLUCAO ---------- */
+function renderEvolucao(){
+  const hist = document.getElementById('evoHistory');
+  hist.innerHTML = '';
+  if(state.evolucao.length===0){ hist.innerHTML = '<div class="empty-state">Nenhum registro mensal ainda.</div>'; }
+  [...state.evolucao].reverse().forEach((e)=>{
+    const el = document.createElement('div');
+    el.className = 'list-item';
+    el.innerHTML = `<div class="content">
+        <div class="date">${e.mes}</div>
+        <div class="notes">Queda: ${e.queda}/5 · Espessura: ${e.espessura}/5</div>
+        <div class="notes">${e.obs || ''}</div>
+      </div>
+      <button class="btn danger small auto" data-id="${e.id}">Excluir</button>`;
+    el.querySelector('button').onclick = async ()=>{
+      state.evolucao = state.evolucao.filter(x=>x.id!==e.id);
+      await sb.from('evolucao').delete().eq('id', e.id);
+      renderEvolucao();
+    };
+    hist.appendChild(el);
+  });
+}
+window.addEvolucao = async function(){
+  const mes = document.getElementById('evoMes').value;
+  if(!mes) return;
+  const payload = {
+    user_id: uid, mes,
+    queda: +document.getElementById('evoQueda').value || null,
+    espessura: +document.getElementById('evoEspessura').value || null,
+    obs: document.getElementById('evoObs').value,
+  };
+  const { data, error } = await sb.from('evolucao').insert(payload).select().single();
+  if(error){ toast('Erro ao salvar', true); return; }
+  state.evolucao.push(data);
+  document.getElementById('evoMes').value='';
+  document.getElementById('evoQueda').value='';
+  document.getElementById('evoEspessura').value='';
+  document.getElementById('evoObs').value='';
+  renderEvolucao();
+};
+
+/* ---------- FINANCEIRO ---------- */
+function renderFinanceiro(){
+  document.getElementById('finData').value = todayStr();
+  const hist = document.getElementById('finHistory');
+  hist.innerHTML = '';
+  let total = 0;
+  if(state.financeiro.length===0){ hist.innerHTML = '<div class="empty-state">Nenhum lançamento ainda.</div>'; }
+  state.financeiro.forEach(f=> total += (+f.valor || 0));
+  [...state.financeiro].sort((a,b)=>b.data.localeCompare(a.data)).forEach(f=>{
+    const el = document.createElement('div');
+    el.className = 'list-item';
+    el.innerHTML = `<div class="content">
+        <div class="date">${fmtDate(f.data)} · ${f.categoria}</div>
+        <div class="notes">${f.descricao}</div>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="mono" style="font-weight:600;">R$ ${(+f.valor).toFixed(2).replace('.',',')}</span>
+        <button class="btn danger small auto" data-id="${f.id}">×</button>
+      </div>`;
+    el.querySelector('button').onclick = async ()=>{
+      state.financeiro = state.financeiro.filter(x=>x.id!==f.id);
+      await sb.from('financeiro').delete().eq('id', f.id);
+      renderFinanceiro();
+    };
+    hist.appendChild(el);
+  });
+  document.getElementById('finTotal').textContent = 'R$ ' + total.toFixed(2).replace('.',',');
+}
+window.addFinanceiro = async function(){
+  const data = document.getElementById('finData').value;
+  const valor = document.getElementById('finValor').value;
+  const descricao = document.getElementById('finDesc').value;
+  if(!data || !valor) return;
+  const payload = { user_id: uid, data, valor, categoria: document.getElementById('finCategoria').value, descricao };
+  const { data: row, error } = await sb.from('financeiro').insert(payload).select().single();
+  if(error){ toast('Erro ao salvar', true); return; }
+  state.financeiro.push(row);
+  document.getElementById('finDesc').value='';
+  document.getElementById('finValor').value='';
+  renderFinanceiro();
+};
+
+/* ---------- RENDER ALL ---------- */
+function renderAll(){
+  renderHeader();
+  renderConfigFields();
+  renderDaily();
+  renderMedsConfig();
+  renderMicro();
+  renderFormula();
+  renderCalendar();
+  renderEvolucao();
+  renderFinanceiro();
+}
+
+/* PWA: registra service worker */
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('/sw.js').catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>
