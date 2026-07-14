@@ -440,7 +440,13 @@ let state = {
   calYear: new Date().getFullYear(),
 };
 
-function todayStr(){ return new Date().toISOString().slice(0,10); }
+function todayStr(){
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
 function addDays(dateStr, days){ const d = new Date(dateStr+'T00:00:00'); d.setDate(d.getDate()+days); return d.toISOString().slice(0,10); }
 function fmtDate(dateStr){ const [y,m,d] = dateStr.split('-'); return `${d}/${m}/${y}`; }
 
