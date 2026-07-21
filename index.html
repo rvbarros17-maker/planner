@@ -237,12 +237,21 @@
       <h3 style="margin-top:26px; font-size:15px; color:var(--green-dark);">Medicamentos</h3>
       <div id="medsConfigList"></div>
       <button class="btn ghost auto" onclick="addMed()">+ Adicionar medicamento</button>
+
+      <h3 style="margin-top:28px; font-size:15px; color:var(--green-dark);">🚿 Rotina de shampoos</h3>
+      <p class="section-desc">Defina qual shampoo usar em cada dia da semana. Deixe em branco os dias sem lavagem.</p>
+      <div id="shampooConfigList"></div>
+      <button class="btn ghost auto small" onclick="saveShampooConfig()">Salvar rotina</button>
     </section>
 
     <!-- MICROAGULHAMENTO -->
     <section class="section" data-section="micro">
       <h2 class="section-title">Cronograma do microagulhamento</h2>
       <p class="section-desc">Sessões a cada <span id="microIntervalLabel">15</span> dias. Registre cada sessão realizada.</p>
+      <div class="streak-msg" style="margin-bottom:18px;">
+        <strong>Áreas:</strong> ✅ topo inteiro · ✅ entradas · ✅ coroa &nbsp;|&nbsp; <strong>Evitar:</strong> ❌ laterais · ❌ nuca (risco de foliculite)<br>
+        Derma roller descartável 0,5 mm. Couro cabeludo limpo e seco antes. Não usar a fórmula manipulada antes nem logo depois — só ~24h após.
+      </div>
       <div class="grid2">
         <div class="field"><label>Intervalo entre sessões (dias)</label><input type="number" id="microInterval" min="1"></div>
         <div class="field"><label>Data da última sessão registrada</label><input type="date" id="microLastDate" readonly></div>
@@ -279,20 +288,16 @@
     <!-- FORMULA -->
     <section class="section" data-section="formula">
       <h2 class="section-title">Fórmula manipulada</h2>
-      <p class="section-desc">Controle de composição e ciclos de uso.</p>
-      <div class="field"><label>Composição da fórmula</label><textarea id="formulaComposicao" placeholder="Ex: Minoxidil 5% + Finasterida 0,1% + Tretinoína 0,01%..."></textarea></div>
+      <p class="section-desc">Uso livre 2–3x/semana à noite — o app só bloqueia automaticamente no dia do microagulhamento e nas horas de pausa logo depois.</p>
+      <div class="field"><label>Composição da fórmula</label><textarea id="formulaComposicao" placeholder="Ex: VEGF 1,5% + Copper Peptide 1% + D-Pantenol 2% + Niacinamida 2% + TrichoSol qsp 60 mL"></textarea></div>
       <div class="grid2">
-        <div class="field"><label>Início do uso (horas após o microagulhamento)</label><input type="number" id="formulaStartHours"></div>
-        <div class="field"><label>Duração do uso (dias)</label><input type="number" id="formulaDuration"></div>
+        <div class="field"><label>Frequência mínima (x/semana)</label><input type="number" id="formulaFreqMin" min="0"></div>
+        <div class="field"><label>Frequência máxima (x/semana)</label><input type="number" id="formulaFreqMax" min="0"></div>
       </div>
+      <div class="field"><label>Pausa após o microagulhamento (horas)</label><input type="number" id="formulaStartHours"></div>
       <button class="btn ghost auto small" onclick="saveFormulaConfig()">Salvar configuração</button>
 
-      <h3 style="margin-top:24px; font-size:15px; color:var(--green-dark);">Ativar novo ciclo de uso</h3>
-      <p class="section-desc" style="margin-bottom:10px;">Normalmente ativado logo após uma sessão de microagulhamento.</p>
-      <div class="field"><label>Data de referência (ex: data do microagulhamento)</label><input type="date" id="formulaRefDate"></div>
-      <button class="btn auto" onclick="addFormulaActivation()">Ativar ciclo</button>
-
-      <h3 style="margin-top:24px; font-size:15px; color:var(--green-dark);">Ciclos registrados</h3>
+      <h3 style="margin-top:24px; font-size:15px; color:var(--green-dark);">Aplicações recentes</h3>
       <div id="formulaHistory"></div>
     </section>
 
@@ -307,7 +312,7 @@
       <div class="cal-grid" id="calGrid"></div>
       <div class="legend">
         <div><span>💉</span>Microagulhamento</div>
-        <div><span>🧴</span>Dias de fórmula</div>
+        <div><span>🧴</span>Fórmula aplicada</div>
         <div><span>💊</span>Todos os comprimidos tomados</div>
         <div><span>⚠️</span>Dia incompleto</div>
       </div>
@@ -431,9 +436,9 @@ let state = {
   meds: [],
   microConfig: { intervalo_dias: 15, last_date: null },
   microSessions: [],
-  formulaConfig: { composicao:'', start_hours: 24, duration_days: 4 },
-  formulaActivations: [],
-  dailyLog: {}, // dateStr -> {id, meds_status, formula_taken, nota}
+  formulaConfig: { composicao:'', start_hours: 24, freq_min: 2, freq_max: 3 },
+  shampooConfig: { schedule: {0:'Vichy Dercos Energizante',1:'Vichy Dercos Energizante',2:'Alpecin C1',3:'Cetoconazol 2%',4:'Vichy Dercos Energizante',5:'Alpecin C1',6:'Cetoconazol 2%'} },
+  dailyLog: {}, // dateStr -> {id, meds_status, formula_taken, shampoo_taken, nota}
   evolucao: [],
   financeiro: [],
   calMonth: new Date().getMonth(),
@@ -528,13 +533,13 @@ sb.auth.getSession().then(({data}) => {
 
 /* ================= DATA LAYER ================= */
 async function loadAll(){
-  const [uc, meds, mc, ms, fc, fa, dl, ev, fin] = await Promise.all([
+  const [uc, meds, mc, ms, fc, sc, dl, ev, fin] = await Promise.all([
     sb.from('user_config').select('*').eq('user_id', uid).maybeSingle(),
     sb.from('meds').select('*').eq('user_id', uid).order('created_at'),
     sb.from('micro_config').select('*').eq('user_id', uid).maybeSingle(),
     sb.from('micro_sessions').select('*').eq('user_id', uid).order('date'),
     sb.from('formula_config').select('*').eq('user_id', uid).maybeSingle(),
-    sb.from('formula_activations').select('*').eq('user_id', uid).order('ref_date'),
+    sb.from('shampoo_config').select('*').eq('user_id', uid).maybeSingle(),
     sb.from('daily_log').select('*').eq('user_id', uid),
     sb.from('evolucao').select('*').eq('user_id', uid).order('created_at'),
     sb.from('financeiro').select('*').eq('user_id', uid).order('data'),
@@ -551,9 +556,16 @@ async function loadAll(){
   state.microSessions = ms.data || [];
 
   if(fc.data){ state.formulaConfig = fc.data; }
-  else { await sb.from('formula_config').insert({ user_id: uid, composicao:'', start_hours:24, duration_days:4 }); state.formulaConfig = { composicao:'', start_hours:24, duration_days:4 }; }
+  else {
+    const defaults = { composicao:'', start_hours:24, freq_min:2, freq_max:3 };
+    await sb.from('formula_config').insert({ user_id: uid, ...defaults });
+    state.formulaConfig = defaults;
+  }
 
-  state.formulaActivations = fa.data || [];
+  if(sc.data){ state.shampooConfig = sc.data; }
+  else {
+    await sb.from('shampoo_config').insert({ user_id: uid, schedule: state.shampooConfig.schedule });
+  }
 
   state.dailyLog = {};
   (dl.data || []).forEach(row => { state.dailyLog[row.date] = row; });
@@ -619,8 +631,7 @@ function renderDaily(){
   const list = document.getElementById('dailyList');
   list.innerHTML = '';
   const today = todayStr();
-  const log = state.dailyLog[today] || { meds_status:{}, formula_taken:false, nota:'' };
-  const activeFormula = isFormulaDay(today);
+  const log = state.dailyLog[today] || { meds_status:{}, formula_taken:false, shampoo_taken:false, nota:'' };
 
   state.meds.forEach(m=>{
     const done = !!(log.meds_status && log.meds_status[m.id]);
@@ -631,11 +642,33 @@ function renderDaily(){
     list.appendChild(row);
   });
 
-  if(activeFormula){
+  // shampoo do dia
+  const dow = new Date(today+'T00:00:00').getDay();
+  const shampooHoje = (state.shampooConfig.schedule || {})[dow];
+  if(shampooHoje){
+    const done = !!log.shampoo_taken;
+    const row = document.createElement('div');
+    row.className = 'med-row' + (done?' done':'');
+    row.innerHTML = `<div class="med-check">✓</div><div class="txt"><div class="med-name">🚿 ${shampooHoje}</div><div class="med-meta">Shampoo do dia</div></div>`;
+    row.querySelector('.med-check').onclick = ()=>toggleDaily('shampoo');
+    list.appendChild(row);
+  }
+
+  // fórmula: bloqueada perto do microagulhamento, senão livre com contador semanal
+  const blocked = isFormulaBlocked(today);
+  const weekCount = formulaCountThisWeek(today);
+  const meta = `${state.formulaConfig.freq_min ?? 2}-${state.formulaConfig.freq_max ?? 3}x`;
+  if(blocked){
+    const row = document.createElement('div');
+    row.className = 'med-row';
+    row.style.opacity = '0.6';
+    row.innerHTML = `<div class="med-check" style="border-color:var(--muted); cursor:default;">–</div><div class="txt"><div class="med-name">🧴 Fórmula manipulada</div><div class="med-meta">Pausada — dia do microagulhamento / pós-procedimento</div></div>`;
+    list.appendChild(row);
+  } else {
     const done = !!log.formula_taken;
     const row = document.createElement('div');
     row.className = 'med-row' + (done?' done':'');
-    row.innerHTML = `<div class="med-check">✓</div><div class="txt"><div class="med-name">🧴 Fórmula manipulada</div><div class="med-meta">Dia de uso do ciclo ativo</div></div>`;
+    row.innerHTML = `<div class="med-check">✓</div><div class="txt"><div class="med-name">🧴 Fórmula manipulada</div><div class="med-meta">${weekCount}x esta semana · meta ${meta}</div></div>`;
     row.querySelector('.med-check').onclick = ()=>toggleDaily('formula');
     list.appendChild(row);
   }
@@ -656,37 +689,57 @@ function renderDaily(){
 
 async function toggleDaily(medId){
   const today = todayStr();
-  const current = state.dailyLog[today] || { user_id: uid, date: today, meds_status:{}, formula_taken:false, nota:'' };
+  const current = state.dailyLog[today] || { user_id: uid, date: today, meds_status:{}, formula_taken:false, shampoo_taken:false, nota:'' };
   if(medId === 'formula'){
     current.formula_taken = !current.formula_taken;
+  } else if(medId === 'shampoo'){
+    current.shampoo_taken = !current.shampoo_taken;
   } else {
     current.meds_status = { ...current.meds_status, [medId]: !current.meds_status[medId] };
   }
   state.dailyLog[today] = current;
   renderDaily(); renderHeader();
   const { error } = await sb.from('daily_log').upsert({
-    user_id: uid, date: today, meds_status: current.meds_status, formula_taken: current.formula_taken, nota: current.nota
+    user_id: uid, date: today, meds_status: current.meds_status, formula_taken: current.formula_taken, shampoo_taken: current.shampoo_taken, nota: current.nota
   }, { onConflict: 'user_id,date' });
   if(error) toast('Erro ao salvar', true); else toast();
 }
 
 window.saveDailyNote = async function(){
   const today = todayStr();
-  const current = state.dailyLog[today] || { user_id: uid, date: today, meds_status:{}, formula_taken:false, nota:'' };
+  const current = state.dailyLog[today] || { user_id: uid, date: today, meds_status:{}, formula_taken:false, shampoo_taken:false, nota:'' };
   current.nota = document.getElementById('dailyNote').value;
   state.dailyLog[today] = current;
   const { error } = await sb.from('daily_log').upsert({
-    user_id: uid, date: today, meds_status: current.meds_status, formula_taken: current.formula_taken, nota: current.nota
+    user_id: uid, date: today, meds_status: current.meds_status, formula_taken: current.formula_taken, shampoo_taken: current.shampoo_taken, nota: current.nota
   }, { onConflict: 'user_id,date' });
   if(error) toast('Erro ao salvar', true); else toast();
 };
 
-function isFormulaDay(dateStr){
-  return state.formulaActivations.some(act=>{
-    const start = addDays(act.ref_date, Math.ceil((state.formulaConfig.start_hours||24)/24));
-    const end = addDays(start, (state.formulaConfig.duration_days||4) - 1);
-    return dateStr >= start && dateStr <= end;
+function isFormulaBlocked(dateStr){
+  // bloqueia no dia da sessão e durante as horas de pausa configuradas
+  const pausaDias = Math.max(1, Math.ceil((state.formulaConfig.start_hours||24)/24));
+  return state.microSessions.some(s=>{
+    const blockedUntil = addDays(s.date, pausaDias);
+    return dateStr >= s.date && dateStr < blockedUntil;
   });
+}
+
+function weekRangeFor(dateStr){
+  const d = new Date(dateStr+'T00:00:00');
+  const dow = d.getDay(); // 0=domingo
+  const start = addDays(dateStr, -dow);
+  const end = addDays(start, 6);
+  return {start, end};
+}
+
+function formulaCountThisWeek(dateStr){
+  const {start, end} = weekRangeFor(dateStr);
+  let count = 0;
+  Object.keys(state.dailyLog).forEach(d=>{
+    if(d>=start && d<=end && state.dailyLog[d].formula_taken) count++;
+  });
+  return count;
 }
 
 /* ---------- TRATAMENTO ---------- */
@@ -791,36 +844,55 @@ window.addMicroSession = async function(){
 function renderFormula(){
   document.getElementById('formulaComposicao').value = state.formulaConfig.composicao || '';
   document.getElementById('formulaStartHours').value = state.formulaConfig.start_hours ?? 24;
-  document.getElementById('formulaDuration').value = state.formulaConfig.duration_days ?? 4;
-  document.getElementById('formulaRefDate').value = todayStr();
+  document.getElementById('formulaFreqMin').value = state.formulaConfig.freq_min ?? 2;
+  document.getElementById('formulaFreqMax').value = state.formulaConfig.freq_max ?? 3;
 
   const hist = document.getElementById('formulaHistory');
   hist.innerHTML = '';
-  if(state.formulaActivations.length===0){ hist.innerHTML = '<div class="empty-state">Nenhum ciclo ativado ainda.</div>'; }
-  [...state.formulaActivations].sort((a,b)=>b.ref_date.localeCompare(a.ref_date)).forEach(act=>{
-    const start = addDays(act.ref_date, Math.ceil((state.formulaConfig.start_hours||24)/24));
-    const end = addDays(start, (state.formulaConfig.duration_days||4)-1);
+  const applied = Object.keys(state.dailyLog)
+    .filter(d => state.dailyLog[d].formula_taken)
+    .sort((a,b)=>b.localeCompare(a))
+    .slice(0, 12);
+  if(applied.length===0){ hist.innerHTML = '<div class="empty-state">Nenhuma aplicação registrada ainda — marque na aba Hoje.</div>'; return; }
+  applied.forEach(d=>{
     const el = document.createElement('div');
     el.className = 'list-item';
-    el.innerHTML = `<div class="content"><div class="date">Ref: ${fmtDate(act.ref_date)}</div><div class="notes">Uso de ${fmtDate(start)} até ${fmtDate(end)}</div></div>`;
+    el.innerHTML = `<div class="content"><div class="date">${fmtDate(d)}</div></div>`;
     hist.appendChild(el);
   });
 }
 window.saveFormulaConfig = async function(){
   state.formulaConfig.composicao = document.getElementById('formulaComposicao').value;
   state.formulaConfig.start_hours = +document.getElementById('formulaStartHours').value || 24;
-  state.formulaConfig.duration_days = +document.getElementById('formulaDuration').value || 4;
+  state.formulaConfig.freq_min = +document.getElementById('formulaFreqMin').value || 0;
+  state.formulaConfig.freq_max = +document.getElementById('formulaFreqMax').value || 0;
   const { error } = await sb.from('formula_config').upsert({ user_id: uid, ...state.formulaConfig }, { onConflict:'user_id' });
   if(error) toast('Erro ao salvar', true); else toast();
-  renderFormula();
+  renderFormula(); renderDaily();
 };
-window.addFormulaActivation = async function(){
-  const ref_date = document.getElementById('formulaRefDate').value;
-  if(!ref_date) return;
-  const { data, error } = await sb.from('formula_activations').insert({ user_id: uid, ref_date }).select().single();
-  if(error){ toast('Erro ao ativar', true); return; }
-  state.formulaActivations.push(data);
-  renderFormula(); renderDaily(); renderHeader();
+
+/* ---------- SHAMPOO ---------- */
+const WEEKDAY_LABELS = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+function renderShampooConfig(){
+  const wrap = document.getElementById('shampooConfigList');
+  wrap.innerHTML = '';
+  const schedule = state.shampooConfig.schedule || {};
+  for(let d=0; d<7; d++){
+    const row = document.createElement('div');
+    row.className = 'field';
+    row.innerHTML = `<label>${WEEKDAY_LABELS[d]}</label><input type="text" value="${schedule[d] || ''}" data-dow="${d}" placeholder="Ex: Vichy Dercos Energizante (ou deixe vazio)">`;
+    wrap.appendChild(row);
+  }
+}
+window.saveShampooConfig = async function(){
+  const schedule = {};
+  document.querySelectorAll('#shampooConfigList input').forEach(inp=>{
+    schedule[inp.dataset.dow] = inp.value;
+  });
+  state.shampooConfig.schedule = schedule;
+  const { error } = await sb.from('shampoo_config').upsert({ user_id: uid, schedule }, { onConflict:'user_id' });
+  if(error) toast('Erro ao salvar', true); else toast();
+  renderDaily();
 };
 
 /* ---------- CALENDARIO ---------- */
@@ -851,7 +923,7 @@ function renderCalendar(){
     const isMicro = state.microSessions.some(s=>s.date===dateStr);
     const isNextMicro = nextMicroDate()===dateStr && !isMicro;
     if(isMicro || isNextMicro) icons.push('💉');
-    if(isFormulaDay(dateStr)) icons.push('🧴');
+    if(state.dailyLog[dateStr] && state.dailyLog[dateStr].formula_taken) icons.push('🧴');
 
     const log = state.dailyLog[dateStr];
     if(dateStr <= today && state.meds.length>0){
@@ -953,6 +1025,7 @@ function renderAll(){
   renderConfigFields();
   renderDaily();
   renderMedsConfig();
+  renderShampooConfig();
   renderMicro();
   renderFormula();
   renderCalendar();
