@@ -21,14 +21,16 @@ planner-app/
 
 1. Acesse [supabase.com](https://supabase.com) → New Project.
 2. Depois de criado, vá em **SQL Editor** e rode o conteúdo do arquivo `supabase-schema.sql`
-   (está na pasta ao lado desse README, um nível acima). Isso cria todas as tabelas com
+   (está na pasta ao lado desse README). Isso cria todas as tabelas com
    RLS (cada usuário só vê os próprios dados).
-3. Vá em **Authentication → Providers** e confirme que "Email" está habilitado.
-4. (Recomendado, já que é uso pessoal) Em **Authentication → Settings**, desabilite
+3. Rode também `migration-v2.sql` (protocolo com shampoo + fórmula em frequência livre)
+   e `migration-v3-fotos.sql` (upload de fotos de evolução + comparativo), nessa ordem.
+4. Vá em **Authentication → Providers** e confirme que "Email" está habilitado.
+5. (Recomendado, já que é uso pessoal) Em **Authentication → Settings**, desabilite
    *"Confirm email"* para não precisar clicar em link de confirmação toda vez que criar a conta.
-5. Vá em **Project Settings → API** e copie:
+6. Vá em **Project Settings → API** e copie:
    - `Project URL`
-   - `anon public key`
+   - `anon public key` (ou, no novo formato, a `publishable key`)
 
 ## Passo 2 — Conectar o app ao Supabase
 

@@ -334,6 +334,42 @@
       <div id="evoHistory"></div>
     </section>
 
+    <!-- FOTOS -->
+    <section class="section" data-section="fotos">
+      <h2 class="section-title">Fotos de evolução</h2>
+      <p class="section-desc">Registre por ângulo e compare qualquer dois momentos, lado a lado ou com slider.</p>
+
+      <div class="grid2">
+        <div class="field"><label>Data</label><input type="date" id="fotoData"></div>
+        <div class="field"><label>Ângulo</label>
+          <select id="fotoAngulo">
+            <option>Topo</option>
+            <option>Entradas</option>
+            <option>Coroa</option>
+            <option>Lateral</option>
+            <option>Outro</option>
+          </select>
+        </div>
+      </div>
+      <div class="field"><label>Foto</label><input type="file" id="fotoFile" accept="image/*" capture="environment"></div>
+      <button class="btn auto" onclick="uploadFoto()">Enviar foto</button>
+      <div id="fotoUploadMsg" style="font-size:12px; color:var(--muted); margin-top:6px;"></div>
+
+      <h3 style="margin-top:26px; font-size:15px; color:var(--green-dark);">Comparar dois momentos</h3>
+      <div class="grid2">
+        <div class="field"><label>Foto A</label><select id="cmpSelectA"></select></div>
+        <div class="field"><label>Foto B</label><select id="cmpSelectB"></select></div>
+      </div>
+      <div style="display:flex; gap:10px; margin-bottom:14px;">
+        <button class="btn ghost auto small" onclick="renderComparison('lado')">Lado a lado</button>
+        <button class="btn ghost auto small" onclick="renderComparison('slider')">Slider antes/depois</button>
+      </div>
+      <div id="compareArea"></div>
+
+      <h3 style="margin-top:26px; font-size:15px; color:var(--green-dark);">Galeria</h3>
+      <div id="fotoGallery"></div>
+    </section>
+
     <!-- GUIA RAPIDO -->
     <section class="section" data-section="guia">
       <h2 class="section-title">Guia rápido</h2>
@@ -415,6 +451,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_ILVB9uP0gcGkB-3b_UofsA_T9KfYKv3';
 
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 window.sb = sb;
+const PHOTO_BUCKET = 'evolucao-fotos';
 
 const TABS = [
   {id:'hoje', label:'Hoje'},
@@ -423,6 +460,7 @@ const TABS = [
   {id:'formula', label:'Fórmula'},
   {id:'calendario', label:'Calendário'},
   {id:'evolucao', label:'Evolução'},
+  {id:'fotos', label:'Fotos'},
   {id:'guia', label:'Guia rápido'},
   {id:'financeiro', label:'Financeiro'},
   {id:'ciencia', label:'Ciência'},
@@ -440,6 +478,7 @@ let state = {
   shampooConfig: { schedule: {0:'Vichy Dercos Energizante',1:'Vichy Dercos Energizante',2:'Alpecin C1',3:'Cetoconazol 2%',4:'Vichy Dercos Energizante',5:'Alpecin C1',6:'Cetoconazol 2%'} },
   dailyLog: {}, // dateStr -> {id, meds_status, formula_taken, shampoo_taken, nota}
   evolucao: [],
+  fotos: [],
   financeiro: [],
   calMonth: new Date().getMonth(),
   calYear: new Date().getFullYear(),
@@ -533,7 +572,7 @@ sb.auth.getSession().then(({data}) => {
 
 /* ================= DATA LAYER ================= */
 async function loadAll(){
-  const [uc, meds, mc, ms, fc, sc, dl, ev, fin] = await Promise.all([
+  const [uc, meds, mc, ms, fc, sc, dl, ev, fin, fotos] = await Promise.all([
     sb.from('user_config').select('*').eq('user_id', uid).maybeSingle(),
     sb.from('meds').select('*').eq('user_id', uid).order('created_at'),
     sb.from('micro_config').select('*').eq('user_id', uid).maybeSingle(),
@@ -543,6 +582,7 @@ async function loadAll(){
     sb.from('daily_log').select('*').eq('user_id', uid),
     sb.from('evolucao').select('*').eq('user_id', uid).order('created_at'),
     sb.from('financeiro').select('*').eq('user_id', uid).order('data'),
+    sb.from('fotos_evolucao').select('*').eq('user_id', uid).order('data'),
   ]);
 
   if(uc.data){ state.config = uc.data; }
@@ -571,6 +611,7 @@ async function loadAll(){
   (dl.data || []).forEach(row => { state.dailyLog[row.date] = row; });
 
   state.evolucao = ev.data || [];
+  state.fotos = fotos.data || [];
   state.financeiro = fin.data || [];
 
   renderAll();
@@ -977,6 +1018,142 @@ window.addEvolucao = async function(){
   renderEvolucao();
 };
 
+/* ---------- FOTOS ---------- */
+window.uploadFoto = async function(){
+  const file = document.getElementById('fotoFile').files[0];
+  const date = document.getElementById('fotoData').value || todayStr();
+  const angulo = document.getElementById('fotoAngulo').value;
+  const msg = document.getElementById('fotoUploadMsg');
+  if(!file){ msg.textContent = 'Selecione uma foto primeiro.'; return; }
+
+  msg.textContent = 'Enviando...';
+  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+  const path = `${uid}/${date}_${angulo.replace(/\s+/g,'-')}_${Date.now()}.${ext}`;
+
+  const { error: upErr } = await sb.storage.from(PHOTO_BUCKET).upload(path, file, { contentType: file.type });
+  if(upErr){ msg.textContent = 'Erro ao enviar: ' + upErr.message; return; }
+
+  const { data, error } = await sb.from('fotos_evolucao').insert({ user_id: uid, data: date, angulo, storage_path: path }).select().single();
+  if(error){ msg.textContent = 'Erro ao salvar registro da foto.'; return; }
+
+  state.fotos.push(data);
+  document.getElementById('fotoFile').value = '';
+  msg.textContent = '✅ Foto enviada.';
+  renderFotos();
+};
+
+async function getSignedUrlsFor(paths){
+  if(paths.length===0) return {};
+  const { data } = await sb.storage.from(PHOTO_BUCKET).createSignedUrls(paths, 3600);
+  const map = {};
+  (data||[]).forEach(d=>{ if(d && d.signedUrl) map[d.path] = d.signedUrl; });
+  return map;
+}
+
+function renderFotos(){
+  renderFotoSelects();
+  renderFotoGallery();
+}
+
+function renderFotoSelects(){
+  const sorted = [...state.fotos].sort((a,b)=>a.data.localeCompare(b.data));
+  const optsHtml = sorted.map(f=>`<option value="${f.id}">${fmtDate(f.data)} — ${f.angulo}</option>`).join('');
+  const selA = document.getElementById('cmpSelectA');
+  const selB = document.getElementById('cmpSelectB');
+  selA.innerHTML = optsHtml || '<option value="">Nenhuma foto ainda</option>';
+  selB.innerHTML = optsHtml || '<option value="">Nenhuma foto ainda</option>';
+  // por padrão, compara a primeira com a mais recente
+  if(sorted.length>1){ selA.value = sorted[0].id; selB.value = sorted[sorted.length-1].id; }
+}
+
+async function renderFotoGallery(){
+  const wrap = document.getElementById('fotoGallery');
+  if(state.fotos.length===0){ wrap.innerHTML = '<div class="empty-state">Nenhuma foto enviada ainda.</div>'; return; }
+  wrap.innerHTML = '<div class="empty-state">Carregando fotos...</div>';
+
+  const paths = state.fotos.map(f=>f.storage_path);
+  const urlMap = await getSignedUrlsFor(paths);
+  const byDate = {};
+  state.fotos.forEach(f=>{ (byDate[f.data] = byDate[f.data]||[]).push(f); });
+  const dates = Object.keys(byDate).sort((a,b)=>b.localeCompare(a));
+
+  wrap.innerHTML = '';
+  dates.forEach(d=>{
+    const block = document.createElement('div');
+    block.style.marginBottom = '16px';
+    const imgsHtml = byDate[d].map(f=>`
+      <div style="display:inline-block; margin:0 10px 10px 0; text-align:center; vertical-align:top;">
+        <img src="${urlMap[f.storage_path]||''}" loading="lazy" style="width:92px; height:92px; object-fit:cover; border-radius:8px; border:1px solid var(--line); background:var(--panel-2);">
+        <div style="font-size:11px; color:var(--muted); margin-top:3px;">${f.angulo}</div>
+        <button class="btn danger small auto" style="margin-top:4px; padding:2px 8px; font-size:11px;" data-id="${f.id}" data-path="${f.storage_path}">remover</button>
+      </div>`).join('');
+    block.innerHTML = `<div class="mono" style="font-weight:600; color:var(--green-dark); font-size:12.5px; margin-bottom:6px;">${fmtDate(d)}</div><div>${imgsHtml}</div>`;
+    wrap.appendChild(block);
+  });
+
+  wrap.querySelectorAll('[data-path]').forEach(btn=>{
+    btn.onclick = async ()=>{
+      const id = btn.dataset.id, path = btn.dataset.path;
+      await sb.storage.from(PHOTO_BUCKET).remove([path]);
+      await sb.from('fotos_evolucao').delete().eq('id', id);
+      state.fotos = state.fotos.filter(f=>f.id!==id);
+      renderFotos();
+    };
+  });
+}
+
+window.renderComparison = async function(mode){
+  const idA = document.getElementById('cmpSelectA').value;
+  const idB = document.getElementById('cmpSelectB').value;
+  const area = document.getElementById('compareArea');
+  if(!idA || !idB){ area.innerHTML = '<div class="empty-state">Selecione as duas fotos acima.</div>'; return; }
+
+  const fotoA = state.fotos.find(f=>f.id===idA);
+  const fotoB = state.fotos.find(f=>f.id===idB);
+  area.innerHTML = '<div class="empty-state">Carregando comparação...</div>';
+  const urlMap = await getSignedUrlsFor([fotoA.storage_path, fotoB.storage_path]);
+  const urlA = urlMap[fotoA.storage_path], urlB = urlMap[fotoB.storage_path];
+  const diffDays = Math.abs(Math.round((new Date(fotoB.data) - new Date(fotoA.data))/86400000));
+
+  area.innerHTML = '';
+  const header = document.createElement('div');
+  header.className = 'streak-msg';
+  header.textContent = `${fmtDate(fotoA.data)} (${fotoA.angulo}) → ${fmtDate(fotoB.data)} (${fotoB.angulo}) · ${diffDays} dia(s) de diferença`;
+  area.appendChild(header);
+
+  if(mode === 'lado'){
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex; gap:12px; flex-wrap:wrap;';
+    row.innerHTML = `
+      <div style="flex:1; min-width:140px; text-align:center;"><img src="${urlA}" style="width:100%; border-radius:10px; border:1px solid var(--line);"><div class="mono" style="font-size:11px; margin-top:4px;">${fmtDate(fotoA.data)} · ${fotoA.angulo}</div></div>
+      <div style="flex:1; min-width:140px; text-align:center;"><img src="${urlB}" style="width:100%; border-radius:10px; border:1px solid var(--line);"><div class="mono" style="font-size:11px; margin-top:4px;">${fmtDate(fotoB.data)} · ${fotoB.angulo}</div></div>
+    `;
+    area.appendChild(row);
+  } else {
+    const box = document.createElement('div');
+    box.style.cssText = 'position:relative; width:100%; height:360px; border-radius:10px; overflow:hidden; border:1px solid var(--line); background:#111;';
+    box.innerHTML = `
+      <img src="${urlA}" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover;">
+      <img id="cmpTop" src="${urlB}" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; clip-path: inset(0 50% 0 0);">
+      <div id="cmpLine" style="position:absolute; top:0; bottom:0; left:50%; width:2px; background:#F3EFE2; pointer-events:none;"></div>
+    `;
+    area.appendChild(box);
+    const range = document.createElement('input');
+    range.type = 'range'; range.min = 0; range.max = 100; range.value = 50;
+    range.style.cssText = 'width:100%; margin-top:10px;';
+    range.oninput = (e)=>{
+      const v = e.target.value;
+      document.getElementById('cmpTop').style.clipPath = `inset(0 ${100-v}% 0 0)`;
+      document.getElementById('cmpLine').style.left = v + '%';
+    };
+    area.appendChild(range);
+    const labels = document.createElement('div');
+    labels.style.cssText = 'display:flex; justify-content:space-between; font-size:11px; color:var(--muted); margin-top:2px;';
+    labels.innerHTML = `<span>◀ ${fmtDate(fotoA.data)}</span><span>${fmtDate(fotoB.data)} ▶</span>`;
+    area.appendChild(labels);
+  }
+};
+
 /* ---------- FINANCEIRO ---------- */
 function renderFinanceiro(){
   document.getElementById('finData').value = todayStr();
@@ -1030,6 +1207,8 @@ function renderAll(){
   renderFormula();
   renderCalendar();
   renderEvolucao();
+  renderFotos();
+  document.getElementById('fotoData').value = todayStr();
   renderFinanceiro();
 }
 
